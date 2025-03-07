@@ -1,0 +1,103 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - master
+      - pre_master
+  pull_request:
+    branches:
+      - master
+      - pre_master
+
+jobs:
+  backend-tests:
+    name: Backend (Symfony) Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: pdo, pdo_mysql
+          tools: composer
+
+      - name: Install dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run Doctrine migrations
+        working-directory: backend
+        run: php bin/console doctrine:migrations:migrate --no-interaction
+
+      - name: Load fixtures
+        working-directory: backend
+        run: php bin/console doctrine:fixtures:load --no-interaction
+
+      - name: Run PHPUnit tests
+        working-directory: backend
+        run: vendor/bin/phpunit
+
+  frontend-tests:
+    name: Frontend (Vue.js) Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run Jest tests
+        working-directory: frontend
+        run: npm run test
+
+  build-and-deploy:
+    name: Build & Deploy (Docker)
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push backend Docker image
+        run: |
+          docker build -t yourdockerhub/symfony-backend:latest ./backend
+          docker push yourdockerhub/symfony-backend:latest
+
+      - name: Build and push frontend Docker image
+        run: |
+          docker build -t yourdockerhub/vue-frontend:latest ./frontend
+          docker push yourdockerhub/vue-frontend:latest
+
+      - name: Deploy to VPS (optional)
+        run: |
+          ssh user@your-vps-ip "cd /path/to/your/project && docker-compose pull && docker-compose up -d"
