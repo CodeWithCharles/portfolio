@@ -5,16 +5,29 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: symfony_backend
+    container_name: nest_backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/var/www/html
+      - "4000:4000"
     environment:
-      DATABASE_URL: "sqlite:///var/www/html/var/data.db"
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/mydatabase"
+    volumes:
+      - ./backend:/app
     depends_on:
-      - frontend
+      - postgres
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   frontend:
     build:
@@ -26,3 +39,6 @@ services:
       - "80:80"
     depends_on:
       - backend
+
+volumes:
+  postgres_data:

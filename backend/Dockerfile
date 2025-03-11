@@ -1,24 +1,16 @@
-FROM php:8.2-cli
+FROM node:18
+
+WORKDIR /app
 
 # Install dependencies
-RUN apt-get update && apt-get install -y git unzip curl
+COPY package*.json ./
+RUN npm install
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Set working directory
-WORKDIR /var/www/html
-
-# Copy Symfony project files
+# Copy project files
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-interaction
+# Expose NestJS port
+EXPOSE 4000
 
-# Ensure SQLite database file exists
-RUN mkdir -p var && touch var/data.db
-
-# Expose port for Symfony server
-EXPOSE 8000
-
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+# Start NestJS app
+CMD ["npm", "run", "start:prod"]
