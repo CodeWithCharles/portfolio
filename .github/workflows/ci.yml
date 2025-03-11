@@ -3,10 +3,12 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - main
+      - master
+      - pre_master
   pull_request:
     branches:
-      - main
+      - master
+      - pre_master
 
 jobs:
   backend-tests:
