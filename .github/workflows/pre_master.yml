@@ -42,7 +42,7 @@ jobs:
         run: npm install
 
       - name: Set DATABASE_URL for Tests
-        run: echo "DATABASE_URL=${{ secrets.DATABASE_CI_URL }}" >> $GITHUB_ENV  # Using DATABASE_CI_URL for testing
+        run: echo "DATABASE_URL=${{ secrets.DATABASE_CI_URL }}" >> $GITHUB_ENV
 
       - name: Wait for PostgreSQL to be Ready
         run: |
@@ -50,10 +50,13 @@ jobs:
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
+          echo "PostgreSQL is ready!"
 
       - name: Run Prisma Migrations
         working-directory: backend
-        run: npx prisma migrate deploy
+        run: |
+          echo "Running Prisma Migrations..."
+          npx prisma migrate deploy
 
       - name: Run Jest tests
         working-directory: backend
