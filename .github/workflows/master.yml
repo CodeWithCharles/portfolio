@@ -17,11 +17,11 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: gitaction
-          POSTGRES_PASSWORD: fakepwd
-          POSTGRES_DB: test_db
+          POSTGRES_USER: ${{ secrets.DATABASE_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DATABASE_DB }}
         ports:
-          - 5432:5432
+          - ${{ secrets.DATABASE_PORT }}:${{ secrets.DATABASE_PORT }}
         options: >-
           --health-cmd "pg_isready -U gitaction"
           --health-interval 5s
@@ -46,7 +46,7 @@ jobs:
 
       - name: Wait for PostgreSQL to be Ready
         run: |
-          until pg_isready -h localhost -p 5432 -U gitaction; do
+          until pg_isready -h localhost -p ${{ secrets.DATABASE_PORT }} -U gitaction; do
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
