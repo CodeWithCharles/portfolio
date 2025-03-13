@@ -19,9 +19,10 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
+          POSTGRES_USER: gitaction
+          POSTGRES_PASSWORD: fakepwd
           POSTGRES_DB: test_db
+          DATABASE_URL: postgresql://gitaction:fakepwd@localhost:5432/mydb?schema=test_db
         ports:
           - 5432:5432
 
