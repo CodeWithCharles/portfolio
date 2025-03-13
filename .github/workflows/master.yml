@@ -20,8 +20,9 @@ jobs:
           POSTGRES_USER: ${{ secrets.DATABASE_USER }}
           POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
           POSTGRES_DB: ${{ secrets.DATABASE_DB }}
+        # Hardcode to the standard Postgres port (5432)
         ports:
-          - ${{ secrets.DATABASE_PORT }}:${{ secrets.DATABASE_PORT }}
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U gitaction"
           --health-interval 5s
@@ -46,7 +47,7 @@ jobs:
 
       - name: Wait for PostgreSQL to be Ready
         run: |
-          until pg_isready -h localhost -p ${{ secrets.DATABASE_PORT }} -U gitaction; do
+          until pg_isready -h localhost -p 5432 -U gitaction; do  # Use 5432 if you're binding to 5432
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
@@ -84,4 +85,10 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
         run: |
           echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -i private_key -o StrictHostKeyChecking=no $SERVER_USER@$SERV
+          ssh -i private_key -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << 'EOF'
+            cd /path/to/your/project
+            git pull origin master
+            docker compose pull
+            docker compose up -d
+            docker exec backend_container_name npx prisma migrate deploy
+          EOF
