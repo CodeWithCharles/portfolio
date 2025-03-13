@@ -20,7 +20,7 @@ jobs:
           POSTGRES_USER: ${{ secrets.DATABASE_USER }}
           POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
           POSTGRES_DB: ${{ secrets.DATABASE_DB }}
-        # Hardcode to the standard Postgres port (5432)
+        # Use a static port (5432) since it's easier and works for testing purposes
         ports:
           - 5432:5432
         options: >-
@@ -78,6 +78,9 @@ jobs:
         working-directory: backend
         run: npm install
 
+      - name: Set Dynamic PostgreSQL Port for Deployment (if necessary)
+        run: echo "POSTGRES_PORT=${{ secrets.DATABASE_PORT }}" >> $GITHUB_ENV  # Using dynamic port for deployment
+
       - name: Connect to Server & Deploy
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -90,5 +93,6 @@ jobs:
             git pull origin master
             docker compose pull
             docker compose up -d
+            # Use dynamic port if needed during deployment
             docker exec backend_container_name npx prisma migrate deploy
           EOF
