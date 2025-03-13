@@ -12,6 +12,7 @@ on:
 
 jobs:
   deploy:
+    name: Setup & Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -23,13 +24,16 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
+        working-directory: backend
         run: npm install
 
       - name: Set DATABASE_URL environment variable
         run: echo "DATABASE_URL=${{ secrets.DATABASE_CI_URL }}" >> $GITHUB_ENV
 
       - name: Run Prisma Migrations
-        run: npx prisma migrate deploy\
+        working-directory: backend
+        run: npx prisma migrate deploy
+
   backend-tests:
     name: Backend Tests (NestJS + PostgreSQL)
     runs-on: ubuntu-latest
@@ -41,7 +45,6 @@ jobs:
           POSTGRES_USER: gitaction
           POSTGRES_PASSWORD: fakepwd
           POSTGRES_DB: test_db
-          DATABASE_URL: postgresql://gitaction:fakepwd@localhost:5432/mydb?schema=test_db
         ports:
           - 5432:5432
 
@@ -57,6 +60,9 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: npm install
+
+      - name: Set DATABASE_URL for Tests
+        run: echo "DATABASE_URL=postgresql://gitaction:fakepwd@localhost:5432/test_db" >> $GITHUB_ENV
 
       - name: Run Migrations
         working-directory: backend
