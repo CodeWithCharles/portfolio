@@ -43,18 +43,21 @@ jobs:
         run: npm install
 
       - name: Set DATABASE_URL for Production
-        run: echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV  # Using DATABASE_URL for production
+        run: echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV  # For the production environment
 
       - name: Wait for PostgreSQL to be Ready
         run: |
           until pg_isready -h localhost -p 5432 -U gitaction; do  # Use 5432 if you're binding to 5432
             echo "Waiting for PostgreSQL..."
-            sleep 2
+            sleep 2  # Wait for 2 seconds before checking again
           done
+          echo "PostgreSQL is ready!"
 
       - name: Run Prisma Migrations
         working-directory: backend
-        run: npx prisma migrate deploy
+        run: |
+          echo "Running Prisma Migrations..."
+          npx prisma migrate deploy
 
       - name: Run Jest tests
         working-directory: backend
