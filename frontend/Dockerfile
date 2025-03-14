@@ -1,25 +1,24 @@
-FROM node:18 AS build
+# Use official Node.js image for frontend
+FROM node:18-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy Vue.js project files
+# Copy all source files and build the Vue app
 COPY . .
-
-# Build Vue app
 RUN npm run build
 
-# Use Nginx as the web server
+# Serve the frontend using Nginx
 FROM nginx:alpine
 
-# Copy built Vue app to Nginx directory
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy built files to Nginx serving directory
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 80
+# Expose port 80 for serving the frontend
 EXPOSE 80
 
+# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

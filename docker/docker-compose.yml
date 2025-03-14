@@ -1,40 +1,54 @@
 version: '3.8'
 
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: nest_backend
-    restart: unless-stopped
-    ports:
-      - "4000:4000"
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - postgres
-
   postgres:
     image: postgres:15
     container_name: postgres_db
-    restart: unless-stopped
-    env_file:
-      - ./backend/.env
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: nest_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/mydatabase
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    networks:
+      - app-network
 
   frontend:
+    profiles:
+      - prod
     build:
-      context: ./frontend
+      context: ../frontend
       dockerfile: Dockerfile
     container_name: vue_frontend
-    restart: unless-stopped
+    restart: always
     ports:
-      - "80:80"
+      - "7552:7552"  # Expose frontend on port 80
     depends_on:
       - backend
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
